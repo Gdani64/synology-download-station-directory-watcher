@@ -11,21 +11,22 @@ class CustomEventHandler(PatternMatchingEventHandler):
 
     def on_created(self, event):
         print(f"New file {event.src_path} has been created.")
-        self.handle_event(event.src_path, event.src_path)
+        self.handle_event(event.src_path)
 
-    def handle_event(self, path, file_path):
+    def handle_event(self, path):
+        print(path)
         # Define actions based on the path
         if 'TV Shows' in path:
             print("Action for TV Shows path")
             # self.trigger_synology_download('torrent_link_for_path1', file_path)
         elif 'Movies' in path:
             print("Action for Movies path")
-            # self.trigger_synology_download('torrent_link_for_path2', file_path)
+            self.trigger_synology_download(path, '/Media/Movies')
         elif 'Books' in path:
             print("Action for Books path")
             # self.trigger_synology_download('torrent_link_for_path2', file_path)
 
-    def trigger_synology_download(self, torrent_link, file_path):
+    def trigger_synology_download(self, file_path, destination):
         synology_url = os.getenv('SYNOLOGY_URL')
 
         username = os.getenv('SYNOLOGY_USERNAME')
@@ -39,9 +40,26 @@ class CustomEventHandler(PatternMatchingEventHandler):
             sid = response.json()['data']['sid']
 
             # Create download task
-            download_url = f"{synology_url}/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&method=create&version=1&uri={torrent_link}&_sid={sid}"
-            response = requests.get(download_url)
-            response.raise_for_status()
+            url_create_task = f'{synology_url}/webapi/DownloadStation/task.cgi'
+
+            # Prepare the multipart/form-data
+            files = {'file': ('filename.torrent', open(file_path, 'rb'), 'application/x-bittorrent')}
+            data = {
+                'api': 'SYNO.DownloadStation.Task',
+                'version': '1',
+                'method': 'create',
+                'destination': destination,
+                '_sid': sid
+            }
+
+            # Create the task
+            response = requests.post(url_create_task, files=files, data=data, verify=False)
+
+            # Check response
+            if response.status_code == 200 and response.json()['success']:
+                print('Torrent task created successfully.')
+            else:
+                print('Failed to create torrent task:', response.json())
 
             # Logout from Synology
             logout_url = f"{synology_url}/webapi/entry.cgi?api=SYNO.API.Auth&method=Logout&version=1&session=DownloadStation&_sid={sid}"
