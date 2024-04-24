@@ -15,13 +15,15 @@ class CustomEventHandler(PatternMatchingEventHandler):
 
     def handle_event(self, path, file_path):
         # Define actions based on the path
-        if 'path1' in path:
-            print("Action for path1")
+        if 'TV Shows' in path:
+            print("Action for TV Shows path")
             # self.trigger_synology_download('torrent_link_for_path1', file_path)
-        elif 'path2' in path:
-            print("Action for path2")
+        elif 'Movies' in path:
+            print("Action for Movies path")
             # self.trigger_synology_download('torrent_link_for_path2', file_path)
-        # Add more elif conditions for additional paths as needed
+        elif 'Books' in path:
+            print("Action for Books path")
+            # self.trigger_synology_download('torrent_link_for_path2', file_path)
 
     def trigger_synology_download(self, torrent_link, file_path):
         synology_url = os.getenv('SYNOLOGY_URL')
